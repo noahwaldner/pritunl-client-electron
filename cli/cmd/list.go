@@ -2,11 +2,22 @@ package cmd
 
 import (
 	"os"
+	"fmt"
+	"encoding/json"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/pritunl/pritunl-client-electron/cli/sprofile"
 	"github.com/spf13/cobra"
 )
+
+type Profile struct {
+    Id string
+	Name string
+	Connected bool
+	ConnectedSince string
+}
+
 
 var ListCmd = &cobra.Command{
 	Use:   "list",
@@ -17,6 +28,10 @@ var ListCmd = &cobra.Command{
 			panic(err)
 			return
 		}
+
+		profiles := "["
+
+
 
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{
@@ -31,29 +46,15 @@ var ListCmd = &cobra.Command{
 		table.SetBorder(true)
 
 		for _, sprfl := range sprfls {
-			if sprfl.Profile != nil {
-				table.Append([]string{
-					sprfl.Id,
-					sprfl.FormatedName(),
-					sprfl.FormatedRunState(),
-					sprfl.FormatedState(),
-					sprfl.Profile.FormatedTime(),
-					sprfl.Profile.ServerAddr,
-					sprfl.Profile.ClientAddr,
-				})
-			} else {
-				table.Append([]string{
-					sprfl.Id,
-					sprfl.FormatedName(),
-					sprfl.FormatedRunState(),
-					sprfl.FormatedState(),
-					"Disconnected",
-					"-",
-					"-",
-				})
+			prof := &Profile{Id: sprfl.Id, Name:sprfl.FormatedName(), Connected: true, ConnectedSince: sprfl.Profile.FormatedTime()}
+			stringified, err := json.Marshal(prof)
+			if err != nil {
+				fmt.Printf("Error: %s", err)
+				return;
 			}
+			profiles += strings.ToLower(string(stringified))
 		}
-
-		table.Render()
+		profiles += "]"
+		fmt.Println(profiles)
 	},
 }
